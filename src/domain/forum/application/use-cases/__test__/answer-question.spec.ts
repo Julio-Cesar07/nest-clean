@@ -12,7 +12,7 @@ describe('Answer a Question', () => {
 		inMemoryAnswerAttachmentsRepository =
 			new InMemoryAnswerAttachmentsRepository();
 		inMemoryAnswerRepository = new InMemoryAnswersRepository(
-			inMemoryAnswerAttachmentsRepository
+			inMemoryAnswerAttachmentsRepository,
 		);
 		sut = new AnswerQuestionUseCase(inMemoryAnswerRepository);
 	});
@@ -20,7 +20,7 @@ describe('Answer a Question', () => {
 	it('create an answer', async () => {
 		const result = await sut.execute({
 			content: 'Nova reposta',
-			instructorId: '1',
+			authorId: '1',
 			questionId: '1',
 			attachmentsIds: ['1', '2'],
 		});
@@ -28,7 +28,7 @@ describe('Answer a Question', () => {
 		expect(result.isRight()).toBe(true);
 		expect(inMemoryAnswerRepository.items[0]).toEqual(result.value?.answer);
 		expect(
-			inMemoryAnswerRepository.items[0].attachments.getItems()
+			inMemoryAnswerRepository.items[0].attachments.getItems(),
 		).toHaveLength(2);
 		expect(inMemoryAnswerRepository.items[0].attachments.getItems()).toEqual([
 			expect.objectContaining({ attachmentId: new UniqueEntityId('1') }),
