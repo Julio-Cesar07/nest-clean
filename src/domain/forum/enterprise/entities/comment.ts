@@ -5,11 +5,11 @@ export interface CommentProps {
 	authorId: UniqueEntityId;
 	content: string;
 	createdAt: Date;
-	updatedAt?: Date;
+	updatedAt?: Date | null;
 }
 
 export abstract class Comment<
-	Props extends CommentProps
+	Props extends CommentProps = CommentProps,
 > extends Entity<Props> {
 	get authorId() {
 		return this.props.authorId;

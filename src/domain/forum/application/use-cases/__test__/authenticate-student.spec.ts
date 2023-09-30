@@ -24,7 +24,7 @@ describe('Authenticate student', () => {
 		inMemoryStudentRepository.create(
 			await makeStudent({
 				email: 'johndoe@example.com',
-				password: '123456',
+				password: await fakeHasher.hash('123456'),
 			}),
 		);
 

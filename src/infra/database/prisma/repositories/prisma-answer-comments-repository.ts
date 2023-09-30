@@ -1,25 +1,52 @@
 import { PaginationParams } from '@/core/repositories/pagination-params';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma.service';
 import { AnswerCommentsRepository } from '@/domain/forum/application/repositories/interfaces/answer-comments-repository';
 import { AnswerComments } from '@/domain/forum/enterprise/entities/answer-comment';
-import { Injectable } from '@nestjs/common';
+import { PrismaAnswerCommentMapper } from '../mappers/prisma-answer-comment-mapper';
 
 @Injectable()
 export class PrismaAnswerCommentsRepository
 	implements AnswerCommentsRepository
 {
-	create(answerComment: AnswerComments): Promise<void> {
-		throw new Error('Method not implemented.');
+	constructor(private prisma: PrismaService) {}
+
+	async create(answerComments: AnswerComments): Promise<void> {
+		const data = PrismaAnswerCommentMapper.toPrisma(answerComments);
+		await this.prisma.comment.create({
+			data,
+		});
 	}
-	findById(answerCommentsId: string): Promise<AnswerComments | null> {
-		throw new Error('Method not implemented.');
+	async findById(answerCommentsId: string): Promise<AnswerComments | null> {
+		const answerComment = await this.prisma.comment.findUnique({
+			where: {
+				id: answerCommentsId,
+			},
+		});
+
+		return answerComment
+			? PrismaAnswerCommentMapper.toDomain(answerComment)
+			: null;
 	}
-	findManyByAnswerId(
+	async findManyByAnswerId(
 		answerId: string,
-		params: PaginationParams,
+		{ page }: PaginationParams,
 	): Promise<AnswerComments[]> {
-		throw new Error('Method not implemented.');
+		const answerComments = await this.prisma.comment.findMany({
+			where: {
+				answerId,
+			},
+			skip: (page - 1) * 20,
+			take: 20,
+		});
+
+		return answerComments.map(PrismaAnswerCommentMapper.toDomain);
 	}
-	delete(answerComment: AnswerComments): Promise<void> {
-		throw new Error('Method not implemented.');
+	async delete(answerComments: AnswerComments): Promise<void> {
+		await this.prisma.comment.delete({
+			where: {
+				id: answerComments.id.toString(),
+			},
+		});
 	}
 }

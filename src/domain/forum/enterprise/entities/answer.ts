@@ -10,13 +10,13 @@ export interface AnswerProps {
 	content: string;
 	attachments: AnswerAttachmentList;
 	createdAt: Date;
-	updatedAt?: Date;
+	updatedAt?: Date | null;
 }
 
 export class Answer extends AggregateRoot<AnswerProps> {
 	static create(
 		props: Optional<AnswerProps, 'createdAt' | 'attachments'>,
-		id?: UniqueEntityId
+		id?: UniqueEntityId,
 	) {
 		const answer = new Answer(
 			{
@@ -24,7 +24,7 @@ export class Answer extends AggregateRoot<AnswerProps> {
 				createdAt: props.createdAt ?? new Date(),
 				attachments: props.attachments ?? new AnswerAttachmentList(),
 			},
-			id
+			id,
 		);
 
 		const isNewAnswer = !id;

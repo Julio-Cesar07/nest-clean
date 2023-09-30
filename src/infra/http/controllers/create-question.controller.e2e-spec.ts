@@ -4,19 +4,24 @@ import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '@/infra/app.module';
 import request from 'supertest';
+import { StudentFactory } from 'test/factories/make-student';
+import { DatabaseModule } from '@/infra/database/database.module';
 
 describe('Create question (E2E)', () => {
 	let app: INestApplication;
 	let prismaService: PrismaService;
+	let studentFactory: StudentFactory;
 	let jwtService: JwtService;
 
 	beforeAll(async () => {
 		const moduleRef = await Test.createTestingModule({
-			imports: [AppModule],
+			imports: [AppModule, DatabaseModule],
+			providers: [StudentFactory],
 		}).compile();
 
 		app = moduleRef.createNestApplication();
 		prismaService = moduleRef.get(PrismaService);
+		studentFactory = moduleRef.get(StudentFactory);
 		jwtService = moduleRef.get(JwtService);
 		await app.init();
 	});
@@ -25,15 +30,9 @@ describe('Create question (E2E)', () => {
 		await app.close();
 	});
 	test('[POST] /questions', async () => {
-		const user = await prismaService.user.create({
-			data: {
-				name: 'John Dow',
-				email: 'johndoe@example.com',
-				password: '123456',
-			},
-		});
+		const user = await studentFactory.makePrismaStudent();
 
-		const accessToken = jwtService.sign({ sub: user.id });
+		const accessToken = jwtService.sign({ sub: user.id.toString() });
 
 		const response = await request(app.getHttpServer())
 			.post('/questions')
@@ -47,7 +46,7 @@ describe('Create question (E2E)', () => {
 
 		const questionOnDatabase = await prismaService.question.findFirst({
 			where: {
-				authorId: user.id,
+				authorId: user.id.toString(),
 			},
 		});
 
