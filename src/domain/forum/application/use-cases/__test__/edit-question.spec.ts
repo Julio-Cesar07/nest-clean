@@ -15,11 +15,11 @@ describe('Edit question', () => {
 		inMemoryQuestionAttachmentsRepository =
 			new InMemoryQuestionAttachmentsRepository();
 		inMemoryQuestionRepository = new InMemoryQuestionsRepository(
-			inMemoryQuestionAttachmentsRepository
+			inMemoryQuestionAttachmentsRepository,
 		);
 		sut = new EditQuestionUseCase(
 			inMemoryQuestionRepository,
-			inMemoryQuestionAttachmentsRepository
+			inMemoryQuestionAttachmentsRepository,
 		);
 	});
 
@@ -36,7 +36,7 @@ describe('Edit question', () => {
 			makeQuestionAttachments({
 				questionId: newQuestion.id,
 				attachmentId: new UniqueEntityId('2'),
-			})
+			}),
 		);
 
 		await sut.execute({
@@ -52,12 +52,52 @@ describe('Edit question', () => {
 			title: 'Nova pergunta test',
 		});
 		expect(
-			inMemoryQuestionRepository.items[0].attachments.getItems()
+			inMemoryQuestionRepository.items[0].attachments.getItems(),
 		).toHaveLength(2);
 		expect(inMemoryQuestionRepository.items[0].attachments.getItems()).toEqual([
 			expect.objectContaining({ attachmentId: new UniqueEntityId('1') }),
 			expect.objectContaining({ attachmentId: new UniqueEntityId('3') }),
 		]);
+	});
+
+	it('should sync new and removed attachment when editing a question', async () => {
+		const newQuestion = makeQuestion();
+
+		await inMemoryQuestionRepository.create(newQuestion);
+
+		inMemoryQuestionAttachmentsRepository.items.push(
+			makeQuestionAttachments({
+				questionId: newQuestion.id,
+				attachmentId: new UniqueEntityId('1'),
+			}),
+			makeQuestionAttachments({
+				questionId: newQuestion.id,
+				attachmentId: new UniqueEntityId('2'),
+			}),
+		);
+
+		const result = await sut.execute({
+			authorId: newQuestion.authorId.toString(),
+			questionId: newQuestion.id.toString(),
+			content: 'Novo conteúdo teste',
+			title: 'Nova pergunta test',
+			attachmentsIds: ['1', '3'],
+		});
+
+		expect(result.isRight()).toBeTruthy();
+		expect(inMemoryQuestionAttachmentsRepository.items).toHaveLength(2);
+		expect(inMemoryQuestionAttachmentsRepository.items).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					attachmentId: new UniqueEntityId('1'),
+					questionId: newQuestion.id,
+				}),
+				expect.objectContaining({
+					attachmentId: new UniqueEntityId('3'),
+					questionId: newQuestion.id,
+				}),
+			]),
+		);
 	});
 
 	it('should not be able to edit a question from another user', async () => {

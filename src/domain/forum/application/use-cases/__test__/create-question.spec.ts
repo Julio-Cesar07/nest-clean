@@ -12,7 +12,7 @@ describe('Create Question', () => {
 		inMemoryQuestionAttachmentRepository =
 			new InMemoryQuestionAttachmentsRepository();
 		inMemoryQuestionRepository = new InMemoryQuestionsRepository(
-			inMemoryQuestionAttachmentRepository
+			inMemoryQuestionAttachmentRepository,
 		);
 		sut = new CreateQuestionUseCase(inMemoryQuestionRepository);
 	});
@@ -27,11 +27,34 @@ describe('Create Question', () => {
 		expect(result.isRight()).toBe(true);
 		expect(inMemoryQuestionRepository.items[0]).toEqual(result.value?.question);
 		expect(
-			inMemoryQuestionRepository.items[0].attachments.getItems()
+			inMemoryQuestionRepository.items[0].attachments.getItems(),
 		).toHaveLength(2);
 		expect(inMemoryQuestionRepository.items[0].attachments.getItems()).toEqual([
 			expect.objectContaining({ attachmentId: new UniqueEntityId('1') }),
 			expect.objectContaining({ attachmentId: new UniqueEntityId('2') }),
 		]);
+	});
+	it('should persist attachments when creating a new question', async () => {
+		const result = await sut.execute({
+			content: 'Nova reposta',
+			authorId: '1',
+			title: 'Oie, eu sou o goku?',
+			attachmentsIds: ['1', '2'],
+		});
+
+		expect(result.isRight()).toBe(true);
+		expect(inMemoryQuestionAttachmentRepository.items).toHaveLength(2);
+		expect(inMemoryQuestionAttachmentRepository.items).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					attachmentId: new UniqueEntityId('1'),
+					questionId: result.value?.question.id,
+				}),
+				expect.objectContaining({
+					attachmentId: new UniqueEntityId('2'),
+					questionId: result.value?.question.id,
+				}),
+			]),
+		);
 	});
 });

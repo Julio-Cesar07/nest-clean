@@ -45,6 +45,8 @@ export class EditQuestionUseCase {
 		if (question.authorId.toString() !== authorId)
 			return left(new NotAllowedError());
 
+		console.log(question.attachments.getItems());
+
 		const currentQuestionAttachments =
 			await this.questionAttachmentsRepository.findManyByQuestionId(questionId);
 
@@ -58,6 +60,8 @@ export class EditQuestionUseCase {
 				questionId: new UniqueEntityId(questionId),
 			});
 		});
+
+		console.log(questionAttachmentList.getItems());
 
 		questionAttachmentList.update(questionAttachments);
 

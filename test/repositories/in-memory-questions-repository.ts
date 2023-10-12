@@ -8,11 +8,15 @@ export class InMemoryQuestionsRepository implements QuestionRepository {
 	public items: Question[] = [];
 
 	constructor(
-		private questionAttachmentsRepository: QuestionAttachmentsRepository
+		private questionAttachmentsRepository: QuestionAttachmentsRepository,
 	) {}
 
 	async create(question: Question): Promise<void> {
 		this.items.push(question);
+
+		await this.questionAttachmentsRepository.createMany(
+			question.attachments.getItems(),
+		);
 
 		DomainEvents.dispatchEventsForAggregate(question.id);
 	}
@@ -25,7 +29,7 @@ export class InMemoryQuestionsRepository implements QuestionRepository {
 
 	async findById(questionId: string): Promise<Question | null> {
 		const question = this.items.find(
-			(item) => item.id.toString() === questionId
+			(item) => item.id.toString() === questionId,
 		);
 
 		return question ?? null;
@@ -41,25 +45,33 @@ export class InMemoryQuestionsRepository implements QuestionRepository {
 
 	async save(question: Question): Promise<void> {
 		const questionIndex = this.items.findIndex(
-			(item) => item.id === question.id
+			(item) => item.id === question.id,
 		);
 
 		if (questionIndex < 0) return;
 
 		this.items[questionIndex] = question;
 
+		await this.questionAttachmentsRepository.createMany(
+			question.attachments.getNewItems(),
+		);
+
+		await this.questionAttachmentsRepository.deleteMany(
+			question.attachments.getRemovedItems(),
+		);
+
 		DomainEvents.dispatchEventsForAggregate(question.id);
 	}
 
 	async delete(question: Question): Promise<void> {
 		const questionIndex = this.items.findIndex(
-			(item) => item.id === question.id
+			(item) => item.id === question.id,
 		);
 
 		this.items.splice(questionIndex, 1);
 
 		this.questionAttachmentsRepository.deleteManyByQuestionId(
-			question.id.toString()
+			question.id.toString(),
 		);
 	}
 }
